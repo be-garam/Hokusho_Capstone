@@ -1,2 +1,7 @@
-data/*
-!data/
+OriginData/*
+/BA/data/*
+/LA/data/*
+/OP/data/*
+!/BA/data/README.md
+!/LA/data/README.md
+!/OP/data/README.md
