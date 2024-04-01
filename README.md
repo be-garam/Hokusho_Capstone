@@ -33,12 +33,12 @@
         
 ### 배치 할당: BA
 - R&R: Harin & tnsu37
-- move to [BA description](/BA/Readme.md)
+- move to [BA description](/BA/README.md)
 
 ### 로케이션 할당: LA
 - R&R: be-garam
-- move to [LA description](/LA/Readme.md)
+- move to [LA description](/LA/README.md)
 
 ### 주문 패턴: OP
 - R&R: Harin & tnsu37
-- move to [OP description](/OP/Readme.md)
+- move to [OP description](/OP/README.md)
