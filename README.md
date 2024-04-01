@@ -14,3 +14,8 @@
         - BA_Sample_Samsung_0421_verificated_1.xlsx: 배치할당용 샘플_삼성물산_출하_4월21일자_검증확인1.xlsx
     - 로케이션할당: Location Assignment
         - LA_Sample_Taiwan_Pantos_Atomy_Performance_0307.xlsx: 로케이션할당용 샘플_대만판토스_애터미 실적Data (0307)_1.xlsx
+
+## Folder
+### 배치 할당: BA
+### 로케이션 할당: LA
+### 주문 패턴: OP
