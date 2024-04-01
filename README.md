@@ -15,7 +15,30 @@
     - 로케이션할당: Location Assignment
         - LA_Sample_Taiwan_Pantos_Atomy_Performance_0307.xlsx: 로케이션할당용 샘플_대만판토스_애터미 실적Data (0307)_1.xlsx
 
-## Folder
+## File Tree
+```
+├── BA 
+│   ├── README.md
+│   ├── data
+│   └── BA.ipynb
+├── LA
+│   ├── README.md
+│   ├── data
+│   └── BA.ipynb
+├── OP 
+│   ├── README.md
+│   ├── data
+│   └── BA.ipynb
+└── data
+```
 ### 배치 할당: BA
+- R&R: Harin & tnsu37
+- move to [BA description](/BA/Readme.md)
+
 ### 로케이션 할당: LA
+- R&R: be-garam
+- move to [LA description](/BA/Readme.md)
+
 ### 주문 패턴: OP
+- R&R: Harin & tnsu37
+- move to [OP description](/OP/Readme.md)
