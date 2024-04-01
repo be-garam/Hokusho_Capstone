@@ -37,7 +37,7 @@
 
 ### 로케이션 할당: LA
 - R&R: be-garam
-- move to [LA description](/BA/Readme.md)
+- move to [LA description](/LA/Readme.md)
 
 ### 주문 패턴: OP
 - R&R: Harin & tnsu37

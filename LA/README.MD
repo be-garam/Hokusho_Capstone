@@ -1,6 +1,7 @@
 ## 시스템
 - [ONS(Order Navi System)](http://www.hokusho.co.kr/page/sub2_4_2.php) 사용
-- **Concept**
+- **Concept**  
+
     ![alt text](resource/image.png)
 - **Process**
     1. 준비: 뒷편에는 렉(물품을 담아둔 선반)이 존재하며 각 작업자는 담당하는 구역의 렉이 정해져있음
