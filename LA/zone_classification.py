@@ -1,4 +1,8 @@
 import pandas as pd
+import random
+
+seed = 42 #should be inputed
+random.seed(seed)
 
 df_boxnum = pd.read_csv('data/LA_givendata_sample_4.csv')
 
@@ -6,7 +10,7 @@ df_boxnum = pd.read_csv('data/LA_givendata_sample_4.csv')
 # df_boxnum group by "Sku Code" count
 df_boxnum_grouped = df_boxnum.groupby("Sku Code").count()
 pre_count_df = df_boxnum_grouped.rename(columns={"오더번호": "개수: 오더번호"}).reset_index()
-print(pre_count_df.head())
+# print(pre_count_df.head())
 count_df = pre_count_df[["Sku Code", "개수: 오더번호"]]
 count_df = count_df.sort_values(by="개수: 오더번호", ascending=False)
 count_df.to_csv('data/LA_givendata_sample_5.csv', index=False)
@@ -15,9 +19,72 @@ count_df.to_csv('data/LA_givendata_sample_5.csv', index=False)
 # df_boxnum group by "Sku Code" count
 df_boxnum_pcs = df_boxnum.groupby("Sku Code").sum()
 pre_count_pcs_df = df_boxnum_pcs.rename(columns={"pcs출하": "합계: pcs출하"}).reset_index()
-print(pre_count_pcs_df.head())
+# print(pre_count_pcs_df.head())
 count_pcs_df = pre_count_pcs_df[["Sku Code", "합계: pcs출하"]]
 count_pcs_df = count_pcs_df.sort_values(by="합계: pcs출하", ascending=False)
 #merge the two dataframes with the same "Sku Code"
 f_count_df = pd.merge(count_df, count_pcs_df, on="Sku Code")
 f_count_df.to_csv('data/LA_givendata_sample_6.csv', index=False)
+
+# Filtering PLT
+zone_num = 10 #should be inputed
+total_psc = sum(f_count_df["합계: pcs출하"])
+total_order = sum(f_count_df["개수: 오더번호"])
+# print(total_psc, total_order)
+# print(total_psc/zon_num, total_order/zon_num)
+# setting standard
+standard_num = 3 #should be inputed
+standard_pcs = total_psc/(zone_num*standard_num)
+
+# sorting by pcs출하
+f_count_df = f_count_df.sort_values(by="합계: pcs출하", ascending=False)
+zone_list = []
+
+# 생각한 알고리즘
+# 1. "합계: pcs출하"를 기준으로 내림차순 정렬
+# 2. "합계: pcs출하"가 standard_pcs보다 크면 zone_list에 "PLT" 추가
+# 3. 남은 "합계: pcs출하"를 반으로 쪼개고, 작은 부분은 reverse로 정렬
+# 4. random하게 숫자를 뽑아 큰 리스트와 작은 리스트에서 해당하는 index를 뽑아 zone_list에 추가
+# 5. 총합이 standard_error 이하가 되도록 더하다가, 큰 리스트에서 뽑은 값 이후 작은 리스트에서 뽑은 값을 더했을 때를 기준으로 분기
+# 5.1. 큰 리스트에서 뽑은 값까지 더했을 때, STANDARD_ERROR만큼 뺀값보다 크면 멈추기
+# 5.2. 작은 리스트에서 뽑은 값 중 
+
+# 2차 생각 알고리즘 
+# 3까지 동일
+# 4. RANDOM하게 뽑아, zone에 넣는다.
+# 5. 큰리스트, 작은 리스트에서 번갈아 뽑으며 큰리스트에서 나온 값은 가장 작은 총합을 가진 zone에 할당, 작은리스트에서 나온 값은 가장 큰 총합을 가진 zone에 할당
+
+
+zone_dict = {i: {"tot_pcs": 0, "tot_order": 0, "sku_codes": []} for i in range(1, zone_num+1)}
+# zone_dict["PLT"] = {"sku_codes": []}
+
+# changed function to input PLT directly to zone_list
+ind = 0
+while f_count_df["합계: pcs출하"][ind] > standard_pcs:
+    zone_list.append("PLT")
+    ind += 1
+
+# print(ind)
+index_list = list(range(ind, len(f_count_df)))
+random.shuffle(index_list)
+# print(min(index_list), max(index_list))
+
+for i in index_list:
+    row = f_count_df.iloc[i]
+    if i <= len(f_count_df)/2:
+        #find the zone with the smallest total pcs
+        min_zone = min(zone_dict, key=lambda x: zone_dict[x]["tot_pcs"])
+        zone_dict[min_zone]["sku_codes"].append(row["Sku Code"])
+        zone_dict[min_zone]["tot_pcs"] += row["합계: pcs출하"]
+        zone_dict[min_zone]["tot_order"] += row["개수: 오더번호"]
+    else:
+        #find the zone with the largest total pcs
+        max_zone = max(zone_dict, key=lambda x: zone_dict[x]["tot_pcs"])
+        zone_dict[max_zone]["sku_codes"].append(row["Sku Code"])
+        zone_dict[max_zone]["tot_pcs"] += row["합계: pcs출하"]
+        zone_dict[max_zone]["tot_order"] += row["개수: 오더번호"]
+
+# print(zone_dict)
+#print zone_dict's zone and total pcs
+for key, value in zone_dict.items():
+    print(key, round(value["tot_pcs"]/total_psc*100, 2), round(value["tot_order"]/total_order*100, 2))
