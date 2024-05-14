@@ -1,12 +1,12 @@
 import pandas as pd
+import numpy as np
 import random
 
-seed = 42 #should be inputed
-random.seed(seed)
+# seed = 42 #should be inputed
+# random.seed(seed)
 
 df_boxnum = pd.read_csv('data/LA_givendata_sample_4.csv')
 
-# Sku code
 # df_boxnum group by "Sku Code" count
 df_boxnum_grouped = df_boxnum.groupby("Sku Code").count()
 pre_count_df = df_boxnum_grouped.rename(columns={"오더번호": "개수: 오더번호"}).reset_index()
@@ -15,7 +15,6 @@ count_df = pre_count_df[["Sku Code", "개수: 오더번호"]]
 count_df = count_df.sort_values(by="개수: 오더번호", ascending=False)
 count_df.to_csv('data/LA_givendata_sample_5.csv', index=False)
 
-# Sku code
 # df_boxnum group by "Sku Code" count
 df_boxnum_pcs = df_boxnum.groupby("Sku Code").sum()
 pre_count_pcs_df = df_boxnum_pcs.rename(columns={"pcs출하": "합계: pcs출하"}).reset_index()
@@ -30,14 +29,12 @@ f_count_df.to_csv('data/LA_givendata_sample_6.csv', index=False)
 zone_num = 10 #should be inputed
 total_psc = sum(f_count_df["합계: pcs출하"])
 total_order = sum(f_count_df["개수: 오더번호"])
-# print(total_psc, total_order)
-# print(total_psc/zon_num, total_order/zon_num)
-# setting standard
-standard_num = 3 #should be inputed
-standard_pcs = total_psc/(zone_num*standard_num)
+print(total_psc, total_order)
 
-# sorting by pcs출하
-f_count_df = f_count_df.sort_values(by="합계: pcs출하", ascending=False)
+standard_num = 32 #should be inputed
+standard_pcs = total_psc/zone_num*standard_num/100
+standard_order = total_order/zone_num*standard_num/100
+
 zone_list = []
 
 # 생각한 알고리즘
@@ -54,37 +51,75 @@ zone_list = []
 # 4. RANDOM하게 뽑아, zone에 넣는다.
 # 5. 큰리스트, 작은 리스트에서 번갈아 뽑으며 큰리스트에서 나온 값은 가장 작은 총합을 가진 zone에 할당, 작은리스트에서 나온 값은 가장 큰 총합을 가진 zone에 할당
 
+# 3차 알고리즘
+# 1. 그냥 간단하게 sorting 되어 있으니 min한 곳에 넣어 전체 업무 밸런스를 맞춘다.
 
 zone_dict = {i: {"tot_pcs": 0, "tot_order": 0, "sku_codes": []} for i in range(1, zone_num+1)}
-# zone_dict["PLT"] = {"sku_codes": []}
 
 # changed function to input PLT directly to zone_list
-ind = 0
-while f_count_df["합계: pcs출하"][ind] > standard_pcs:
-    zone_list.append("PLT")
-    ind += 1
+length = len(f_count_df)
+zone_list = np.zeros(length)
+print(standard_pcs, standard_order)
+# for i in range(length):
+#     if f_count_df["합계: pcs출하"][i] > standard_pcs and f_count_df["개수: 오더번호"][i] > standard_order:
+#         zone_list[i] = "PLT"
+#         total_psc -= f_count_df["합계: pcs출하"][i]
+#         total_order -= f_count_df["개수: 오더번호"][i]
+
 
 # print(ind)
-index_list = list(range(ind, len(f_count_df)))
-random.shuffle(index_list)
+
+# random.shuffle(index_list)
 # print(min(index_list), max(index_list))
 
-for i in index_list:
-    row = f_count_df.iloc[i]
-    if i <= len(f_count_df)/2:
-        #find the zone with the smallest total pcs
+# for i in index_list:
+#     row = f_count_df.iloc[i]
+#     if i <= len(f_count_df)/2:
+#         #find the zone with the smallest total pcs
+#         min_zone = min(zone_dict, key=lambda x: zone_dict[x]["tot_pcs"])
+#         zone_dict[min_zone]["sku_codes"].append(row["Sku Code"])
+#         zone_dict[min_zone]["tot_pcs"] += row["합계: pcs출하"]
+#         zone_dict[min_zone]["tot_order"] += row["개수: 오더번호"]
+#     else:
+#         #find the zone with the largest total pcs
+#         max_zone = max(zone_dict, key=lambda x: zone_dict[x]["tot_pcs"])
+#         zone_dict[max_zone]["sku_codes"].append(row["Sku Code"])
+#         zone_dict[max_zone]["tot_pcs"] += row["합계: pcs출하"]
+#         zone_dict[max_zone]["tot_order"] += row["개수: 오더번호"]
+
+for i in range(length):
+    # if f_count_df["합계: pcs출하"][i] < standard_pcs and f_count_df["개수: 오더번호"][i] < standard_order:
+    if f_count_df["개수: 오더번호"][i] < standard_order:
+        row = f_count_df.iloc[i]
         min_zone = min(zone_dict, key=lambda x: zone_dict[x]["tot_pcs"])
         zone_dict[min_zone]["sku_codes"].append(row["Sku Code"])
         zone_dict[min_zone]["tot_pcs"] += row["합계: pcs출하"]
         zone_dict[min_zone]["tot_order"] += row["개수: 오더번호"]
-    else:
-        #find the zone with the largest total pcs
-        max_zone = max(zone_dict, key=lambda x: zone_dict[x]["tot_pcs"])
-        zone_dict[max_zone]["sku_codes"].append(row["Sku Code"])
-        zone_dict[max_zone]["tot_pcs"] += row["합계: pcs출하"]
-        zone_dict[max_zone]["tot_order"] += row["개수: 오더번호"]
 
 # print(zone_dict)
 #print zone_dict's zone and total pcs
 for key, value in zone_dict.items():
-    print(key, round(value["tot_pcs"]/total_psc*100, 2), round(value["tot_order"]/total_order*100, 2))
+    print(key, len(value["sku_codes"]), round(value["tot_pcs"]/total_psc*100, 2), round(value["tot_order"]/total_order*100, 2))
+
+# 많은 친구는 뒤에 배치할 것(앞에서 밀리는 것 보다는 뒤에 배치하는게 좋음 )
+# sort zone_dict keys by total pcs
+sorted_zone_dict = dict(zip(sorted(zone_dict.keys(), key=lambda x: zone_dict[x]["tot_pcs"], reverse=True), [i for i in range(zone_num, 0, -1)]))
+# print(sorted_zone_dict)
+
+# print(ind)
+# for i in index_list:
+#     sku_code = f_count_df["Sku Code"][i]
+
+f_zone_dict = {}
+#remake zone_dict into "sku_code": "zone"
+for key, value in zone_dict.items():
+    for sku_code in value["sku_codes"]:
+        f_zone_dict[sku_code] = sorted_zone_dict[key]
+
+#merge f_zone_dict to zone_list
+for sku_code in f_zone_dict.keys():
+    index = f_count_df[f_count_df["Sku Code"] == sku_code].index[0]
+    zone_list[index] = f_zone_dict[sku_code]
+
+f_count_df["zone 할당"] = zone_list
+f_count_df.to_csv('data/LA_givendata_sample_7.csv', index=False)
