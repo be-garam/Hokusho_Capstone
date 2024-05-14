@@ -57,16 +57,31 @@ length = len(f_count_df)
 zone_dict = {i: {"tot_pcs": 0, "tot_order": 0, "sku_codes": []} for i in range(1, zone_num+1)}
 zone_list = np.zeros(length)
 
+# add 30% 우선 채우기 부분
+cut_ind = length/zone_num*0.2
+inverse_dict = dict(zip(range(zone_num-1, -1, -1), range(1, zone_num+1)))
+
 for i in range(length):
     row = f_count_df.iloc[i]
     if row["개수: 오더번호"] > standard_order and row["합계: pcs출하"] > standard_pcs:
         total_order -= row["개수: 오더번호"]
         total_psc -= row["합계: pcs출하"]
     else:
-        min_zone = min(zone_dict, key=lambda x: zone_dict[x]["tot_pcs"])
-        zone_dict[min_zone]["sku_codes"].append(row["Sku Code"])
-        zone_dict[min_zone]["tot_pcs"] += row["합계: pcs출하"]
-        zone_dict[min_zone]["tot_order"] += row["개수: 오더번호"]
+        if i > cut_ind and (i//zone_num)%2:
+            ind = i%zone_num
+            zone_dict[ind+1]["sku_codes"].append(row["Sku Code"])
+            zone_dict[ind+1]["tot_pcs"] += row["합계: pcs출하"]
+            zone_dict[ind+1]["tot_order"] += row["개수: 오더번호"]
+        elif i > cut_ind and not((i//zone_num)%2):
+            ind = i%zone_num
+            zone_dict[inverse_dict[ind]]["sku_codes"].append(row["Sku Code"])
+            zone_dict[inverse_dict[ind]]["tot_pcs"] += row["합계: pcs출하"]
+            zone_dict[inverse_dict[ind]]["tot_order"] += row["개수: 오더번호"]
+        else:
+            min_zone = min(zone_dict, key=lambda x: zone_dict[x]["tot_pcs"])
+            zone_dict[min_zone]["sku_codes"].append(row["Sku Code"])
+            zone_dict[min_zone]["tot_pcs"] += row["합계: pcs출하"]
+            zone_dict[min_zone]["tot_order"] += row["개수: 오더번호"]
 
 for key, value in zone_dict.items():
     print(key, len(value["sku_codes"]), round(value["tot_pcs"]/total_psc*100, 2), round(value["tot_order"]/total_order*100, 2))
