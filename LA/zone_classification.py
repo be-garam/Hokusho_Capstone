@@ -48,18 +48,14 @@ total_psc = sum(f_count_df["합계: pcs출하"])
 total_order = sum(f_count_df["개수: 오더번호"])
 length = len(f_count_df)
 
-standard_pcs = total_psc/zone_num
-standard_order = total_order/zone_num
-standard_sku_count = int(length/zone_num)
-# print(standard_pcs, standard_order, standard_sku_count)
-
 plt_cut = 31.5 #should be inputed
-plt_cut_pcs = standard_pcs*plt_cut/100
-plt_cut_order = standard_order*plt_cut/100
+plt_cut_pcs = total_psc/zone_num*plt_cut/100
+plt_cut_order = total_order/zone_num*plt_cut/100
 # print(plt_cut_pcs, plt_cut_order)
 
 zone_dict = {i: {"tot_pcs": 0, "tot_order": 0, "sku_codes": []} for i in range(1, zone_num+1)}
 zone_list = np.zeros(length)
+# 12345\n1098765 로 넣기 위한 준비
 inverse_dict = dict(zip(range(zone_num-1, -1, -1), range(1, zone_num+1)))
 
 def alert_differ(sku, order, pcs):
@@ -76,12 +72,17 @@ for i in c_range_indices:
     if row["합계: pcs출하"] > plt_cut_pcs and row["개수: 오더번호"] > plt_cut_order:
         total_order -= row["개수: 오더번호"]
         total_psc -= row["합계: pcs출하"]
+        length -= 1
         range_indices.remove(i)
         alert_differ(row["Sku Code"], row["개수: 오더번호"], row["합계: pcs출하"])
     else:
         continue
 
-trial_row = 5
+standard_pcs = total_psc/zone_num
+standard_order = total_order/zone_num
+standard_sku_count = int(length/zone_num)
+
+trial_row = 0
 cut_ind = zone_num*trial_row
 fixed_range_indices = range_indices[:cut_ind]
 random_range_indices = range_indices[cut_ind:]
@@ -100,26 +101,32 @@ for i in fixed_range_indices:
         zone_dict[inverse_dict[ind]]["tot_pcs"] += row["합계: pcs출하"]
         zone_dict[inverse_dict[ind]]["tot_order"] += row["개수: 오더번호"]
 
+# print(random_range_indices)
+# print(zone_dict)
+
 # get 
 for zone_i in zone_dict.keys():
     upper_limit_order = standard_order*1.05 - zone_dict[zone_i]["tot_order"]
     lower_limit_order = standard_order*0.95 - zone_dict[zone_i]["tot_order"]
     upper_limit_sku = standard_sku_count + 2 - len(zone_dict[zone_i]["sku_codes"])
     lower_limit_sku = standard_sku_count - 2 - len(zone_dict[zone_i]["sku_codes"])
+    print(f"{zone_i}'s exisiting order: {zone_dict[zone_i]['tot_order']}, exisiting pcs: {zone_dict[zone_i]['tot_pcs']}")
+    print(f"upper_limit_order: {upper_limit_order}, lower_limit_order: {lower_limit_order}")
+    print(f"upper_limit_sku: {upper_limit_sku}, lower_limit_sku: {lower_limit_sku}")
 
-    for trial_rand in range(length):
+    for trial_rand in range(10**6):
         num_indices = random.randint(lower_limit_sku, upper_limit_sku)
-        selected_indices = random.sample(c_random_range_indices, num_indices)
-        print(selected_indices)
+        selected_indices = random.sample(random_range_indices, num_indices)
         sum_order = sum([f_count_df.iloc[j]["개수: 오더번호"] for j in selected_indices])
-        print(sum_order + zone_dict[zone_i]["tot_order"])
         if sum_order > lower_limit_order and sum_order < upper_limit_order:
+            print("selected_indices' sum: ", sum_order)
             for j in selected_indices:
                 row = f_count_df.iloc[j]
                 zone_dict[zone_i]["sku_codes"].append(row["Sku Code"])
                 zone_dict[zone_i]["tot_pcs"] += row["합계: pcs출하"]
                 zone_dict[zone_i]["tot_order"] += row["개수: 오더번호"]
                 random_range_indices.remove(j)
+            break
         else:
             continue
 
