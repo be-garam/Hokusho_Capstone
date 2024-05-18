@@ -82,6 +82,7 @@ standard_pcs = total_psc/zone_num
 standard_order = total_order/zone_num
 standard_sku_count = int(length/zone_num)
 
+# 12345/98765/
 trial_row = 0
 cut_ind = zone_num*trial_row
 fixed_range_indices = range_indices[:cut_ind]
