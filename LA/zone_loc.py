@@ -30,7 +30,7 @@ print(sorted(zone_sku_dict.keys()))
 # check plt list
 pre_df_plt = pd.read_csv('data/LA_givendata_sample_7.csv')
 print(pre_df_plt.head())
-# get "Zone 할당" column's value is 0
+# get "Zone 할당" column's value is 034
 df_plt = pre_df_plt[pre_df_plt['zone 할당'] == 0]
 plt_list = df_plt["Sku Code"].tolist()
 
