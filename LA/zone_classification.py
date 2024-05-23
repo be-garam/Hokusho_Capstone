@@ -36,11 +36,13 @@ def cutting_plt(df_grouped, plt_cut, zone_num):
     total_psc = sum(df_grouped["합계: pcs출하"])
     total_order = sum(df_grouped["개수: 오더번호"])
     length = len(df_grouped)
+    # print(f"before / total_psc: {total_psc}, total_order: {total_order}, length: {length}")
 
     plt_cut_pcs = total_psc/zone_num*plt_cut/100
     plt_cut_order = total_order/zone_num*plt_cut/100
 
     df_plt = pd.DataFrame(columns=["Sku Code", "개수: 오더번호", "합계: pcs출하"])
+    drop_index = []
     for i in range(length):
         row = df_grouped.iloc[i]
         if row["합계: pcs출하"] > plt_cut_pcs and row["개수: 오더번호"] > plt_cut_order:
@@ -48,13 +50,19 @@ def cutting_plt(df_grouped, plt_cut, zone_num):
             total_order -= row["개수: 오더번호"]
             total_psc -= row["합계: pcs출하"]
             length -= 1
+            drop_index.append(i)
         else:
             continue
     df_plt["zone 할당"] = ["PLT" for i in range(len(df_plt))]
     df_plt.reset_index(drop=True, inplace=True)
-
-    df_grouped = df_grouped.drop(df_plt.index).sort_values(by="개수: 오더번호", ascending=False).reset_index()
-    print(df_grouped.head())
+    # df_plt.to_csv('data/LA_givendata_sample_plt.csv', index=False)
+    
+    # print(f"after / total_psc: {total_psc}, total_order: {total_order}, length: {length}")
+    df_grouped.drop(drop_index, inplace=True)
+    df_grouped = df_grouped.sort_values(by="개수: 오더번호", ascending=False)
+    df_grouped.reset_index(drop=True, inplace=True)
+    # df_grouped.to_csv('data/LA_givendata_sample_plt_droped.csv', index=False)
+    # print(df_grouped.head())
     return df_grouped, df_plt, total_psc, total_order, length
 
 
@@ -73,7 +81,7 @@ def zone_assignment(df_grouped, zone_num, trial_row, error_percentage, total_psc
     random_range_indices = range_indices[cut_ind:]
     c_random_range_indices = random_range_indices.copy()
 
-    zone_dict = {i: {"tot_pcs": 0, "tot_order": 0, "sku_codes": []} for i in range(1, zone_num+1)}
+    zone_dict = {i: {"ind":[], "tot_pcs": 0, "tot_order": 0, "sku_codes": []} for i in range(1, zone_num+1)}
     zone_list = np.zeros(length)
     inverse_dict = dict(zip(range(zone_num-1, -1, -1), range(1, zone_num+1)))
 
@@ -84,12 +92,15 @@ def zone_assignment(df_grouped, zone_num, trial_row, error_percentage, total_psc
             zone_dict[ind+1]["sku_codes"].append(row["Sku Code"])
             zone_dict[ind+1]["tot_pcs"] += row["합계: pcs출하"]
             zone_dict[ind+1]["tot_order"] += row["개수: 오더번호"]
+            zone_dict[ind+1]["ind"].append(i)
         elif not((i//zone_num)%2):
             ind = i%zone_num
             zone_dict[inverse_dict[ind]]["sku_codes"].append(row["Sku Code"])
             zone_dict[inverse_dict[ind]]["tot_pcs"] += row["합계: pcs출하"]
             zone_dict[inverse_dict[ind]]["tot_order"] += row["개수: 오더번호"]
-
+            zone_dict[ind+1]["ind"].append(i)
+    
+    print(zone_dict)
     # random
     for zone_i in zone_dict.keys():
         upper_limit_order = standard_order*(1.00 + error_percentage) - zone_dict[zone_i]["tot_order"]
@@ -147,7 +158,8 @@ def __main__(zone_num, plt_cut, trial_row, error_percentage):
     df_grouped, df_plt, total_psc, total_order, length = cutting_plt(df_grouped, plt_cut, zone_num)
     df_grouped = zone_assignment(df_grouped, zone_num, trial_row, error_percentage, total_psc, total_order, length)
     
-    df_grouped.to_csv('data/LA_givendata_sample_7_1.csv', index=False)
+    zone_df = pd.concat([df_plt, df_grouped], ignore_index=True)
+    zone_df.to_csv('data/LA_givendata_sample_zone.csv', index=False)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="zone assignment with filtering plt")
