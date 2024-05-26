@@ -10,12 +10,14 @@ class Main(QDialog):
     def initUI(self):
         layout = QVBoxLayout()
 
-        '''Blank Table Widget'''
-        table_widget = QTableWidget()
+        label = QLabel("Load CSV file and get location assignment data")
 
         '''PushButton for Load CSV file'''
         button_load = QPushButton("Load")
         button_load.clicked.connect(lambda state, widget = table_widget: self.slot_button_load(state, widget))
+
+        '''Blank Table Widget'''
+        table_widget = QTableWidget()
 
         '''PushButton for Save modified CSV'''
         button_save = QPushButton("Save")
@@ -26,7 +28,7 @@ class Main(QDialog):
         layout.addWidget(button_save)
 
         self.setLayout(layout)
-        self.resize(500, 500)
+        self.resize(1200, 500)
         self.show()
 
 
