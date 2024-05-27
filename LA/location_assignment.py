@@ -101,9 +101,9 @@ def classify_b2c(df, width, order_col_name, sku_col_name):
     grouped_df = pregrouped_df.groupby(order_col_name).agg({order_col_name: "first", sku_col_name: "nunique", "수량의 부피": "sum", "B2C구분": lambda x: list(x)[0]})
     grouped_df = grouped_df.rename(columns={sku_col_name: "개수: Sku Code", "수량의 부피": "합계: 수량의 부피"})
     grouped_df = grouped_df.sort_values(by="합계: 수량의 부피", ascending=False)
-    
+    # grouped_df.drop("오더번호", axis=1, inplace=True)
+
     print("오더의 박스수 정하기 완료".center(width, "="))
-    grouped_df.to_csv('output/LA_오더의_박스수_정하기.csv', index=False)
     return grouped_df
 
 
@@ -307,10 +307,7 @@ def zone_assignment(df_grouped, zone_num, trial_row, error_percentage, total_psc
     return df_grouped
 
 
-def merge_zone(box_filtered_df, df_grouped, df_plt):
-    zone_df = pd.concat([df_plt, df_grouped], ignore_index=True)
-    zone_df.to_csv('output/LA_품목_배치zone할당.csv', index=False)
-
+def merge_zone(box_filtered_df, zone_df):
     # merge zone_df's "zone 할당" to box_filtered_df based on "Sku Code"
     box_filtered_df = pd.merge(box_filtered_df, zone_df[["Sku Code", "zone 할당"]], on="Sku Code", how="left")
     return box_filtered_df
@@ -330,13 +327,19 @@ def __main__():
 
     b2c_volume_df = update_b2c_volume(pre_df, width, pre_b2c_col_name, width_col_name, height_col_name, depth_col_name, pcs_col_name)
     b2c_grouped_df = classify_b2c(b2c_volume_df, width, order_col_name, sku_col_name)
+    b2c_grouped_df.to_csv('output/LA_오더의_박스수_정하기.csv', index=False)
+
     box_filtered_df = filtering_box(b2c_grouped_df, b2c_volume_df, width, order_col_name, b2b_min, b2c_min)
 
     df_grouped = group_order_pcs(box_filtered_df)
     df_grouped, df_plt, total_psc, total_order, length = cutting_plt(df_grouped, plt_cut, zone_num)
     df_grouped = zone_assignment(df_grouped, zone_num, trial_row, error_percentage, total_psc, total_order, length)
     
-    final_df = merge_zone(box_filtered_df, df_grouped, df_plt)
+    zone_df = pd.concat([df_plt, df_grouped], ignore_index=True)
+    zone_df.to_csv('output/LA_품목_배치zone할당.csv', index=False)
+
+    final_df = merge_zone(box_filtered_df, zone_df)
+
     final_df.drop(columns=["index"], inplace=True)
     final_df.to_csv('output/LA_최종_요청자료.csv', index=False)
 
