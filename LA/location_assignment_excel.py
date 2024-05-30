@@ -8,15 +8,11 @@ import os
 import openpyxl
 
 def __main__():
-    base_dir = 'output/'
-    file_name = 'LA_최종_요청자료.xlsx'
-    xlxs_dir = os.path.join(base_dir, file_name)
-
     seed = 42 #maybe random
     random.seed(seed)
     width = 80
 
-    raw_df = check_df()
+    path, raw_df = check_df()
     pre_df = raw_df.copy()
     print("checking the columns".center(width, "="))
     pre_b2c_col_name, order_col_name, width_col_name, height_col_name, depth_col_name, pcs_col_name, sku_col_name = check_column(pre_df)
@@ -41,6 +37,10 @@ def __main__():
 
     final_df.drop(columns=["index"], inplace=True)
     final_df.to_csv('output/LA_최종_요청자료.csv', index=False)
+
+    base_dir = 'output/'
+    file_name = path.split('/')[-1].split('.')[0] + '_LA.xlsx'
+    xlxs_dir = os.path.join(base_dir, file_name)
 
     with pd.ExcelWriter(xlxs_dir) as writer:
         final_df.to_excel(writer, sheet_name = '요청자료')

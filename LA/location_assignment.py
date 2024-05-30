@@ -12,7 +12,7 @@ def check_df():
     except:
         print("Please enter a valid path.")
         sys.exit()
-    return df
+    return path, df
 
 
 def validate_column(df, col_name):
@@ -167,12 +167,12 @@ def filtering_box(grouped_df, df, width, order_col_name, b2b_min, b2c_min):
     return df
 
 
-def group_order_pcs(df_boxnum):
+def group_order_pcs(df_boxnum, pcs_col_name, sku_col_name):
     grouped_dict = {}
     for i in range(len(df_boxnum)):
         row = df_boxnum.iloc[i]
-        sku_code = row["Sku Code"]
-        pcs = row["pcs출하"]
+        sku_code = row[sku_col_name]
+        pcs = row[pcs_col_name]
         if sku_code in grouped_dict.keys():
             grouped_dict[sku_code][0] += 1
             grouped_dict[sku_code][1] += pcs
@@ -180,7 +180,7 @@ def group_order_pcs(df_boxnum):
             grouped_dict[sku_code] = [1, pcs]
 
     df_grouped = pd.DataFrame.from_dict(grouped_dict, orient="index", columns=["개수: 오더번호", "합계: pcs출하"]).reset_index()
-    df_grouped.columns = ["Sku Code", "개수: 오더번호", "합계: pcs출하"]
+    df_grouped.columns = [sku_col_name, "개수: 오더번호", "합계: pcs출하"]
     # df_grouped = df_grouped.sort_values(by="개수: 오더번호", ascending=False).reset_index()
 
     return df_grouped
@@ -193,7 +193,7 @@ def alert_differ(sku, order, pcs):
         return None
 
 
-def cutting_plt(df_grouped, plt_cut, zone_num):
+def cutting_plt(df_grouped, sku_col_name, plt_cut, zone_num):
     total_psc = sum(df_grouped["합계: pcs출하"])
     total_order = sum(df_grouped["개수: 오더번호"])
     length = len(df_grouped)
@@ -202,7 +202,7 @@ def cutting_plt(df_grouped, plt_cut, zone_num):
     plt_cut_pcs = total_psc/zone_num*plt_cut/100
     plt_cut_order = total_order/zone_num*plt_cut/100
 
-    df_plt = pd.DataFrame(columns=["Sku Code", "개수: 오더번호", "합계: pcs출하"])
+    df_plt = pd.DataFrame(columns=[sku_col_name, "개수: 오더번호", "합계: pcs출하"])
     drop_index = []
     for i in range(length):
         row = df_grouped.iloc[i]
@@ -227,7 +227,7 @@ def cutting_plt(df_grouped, plt_cut, zone_num):
     return df_grouped, df_plt, total_psc, total_order, length
 
 
-def zone_assignment(df_grouped, zone_num, trial_row, error_percentage, total_psc, total_order, length):
+def zone_assignment(df_grouped, sku_col_name, zone_num, trial_row, error_percentage, total_psc, total_order, length):
 
     standard_pcs = total_psc/zone_num
     standard_order = total_order/zone_num
@@ -248,13 +248,13 @@ def zone_assignment(df_grouped, zone_num, trial_row, error_percentage, total_psc
         row = df_grouped.iloc[i]
         if (i//zone_num)%2:
             ind = i%zone_num
-            zone_dict[ind+1]["sku_codes"].append(row["Sku Code"])
+            zone_dict[ind+1]["sku_codes"].append(row[sku_col_name])
             zone_dict[ind+1]["tot_pcs"] += row["합계: pcs출하"]
             zone_dict[ind+1]["tot_order"] += row["개수: 오더번호"]
             zone_dict[ind+1]["ind"].append(i)
         elif not((i//zone_num)%2):
             ind = i%zone_num
-            zone_dict[inverse_dict[ind]]["sku_codes"].append(row["Sku Code"])
+            zone_dict[inverse_dict[ind]]["sku_codes"].append(row[sku_col_name])
             zone_dict[inverse_dict[ind]]["tot_pcs"] += row["합계: pcs출하"]
             zone_dict[inverse_dict[ind]]["tot_order"] += row["개수: 오더번호"]
             zone_dict[ind+1]["ind"].append(i)
@@ -277,7 +277,7 @@ def zone_assignment(df_grouped, zone_num, trial_row, error_percentage, total_psc
                 print("selected_indices' sum: ", sum_order)
                 for j in selected_indices:
                     row = df_grouped.iloc[j]
-                    zone_dict[zone_i]["sku_codes"].append(row["Sku Code"])
+                    zone_dict[zone_i]["sku_codes"].append(row[sku_col_name])
                     zone_dict[zone_i]["tot_pcs"] += row["합계: pcs출하"]
                     zone_dict[zone_i]["tot_order"] += row["개수: 오더번호"]
                     random_range_indices.remove(j)
@@ -299,7 +299,7 @@ def zone_assignment(df_grouped, zone_num, trial_row, error_percentage, total_psc
 
     #merge f_zone_dict to zone_list
     for sku_code in f_zone_dict.keys():
-        index = df_grouped[df_grouped["Sku Code"] == sku_code].index[0]
+        index = df_grouped[df_grouped[sku_col_name] == sku_code].index[0]
         zone_list[index] = f_zone_dict[sku_code]
 
     df_grouped["zone 할당"] = zone_list
@@ -307,9 +307,9 @@ def zone_assignment(df_grouped, zone_num, trial_row, error_percentage, total_psc
     return df_grouped
 
 
-def merge_zone(box_filtered_df, zone_df):
+def merge_zone(box_filtered_df, zone_df, sku_col_name):
     # merge zone_df's "zone 할당" to box_filtered_df based on "Sku Code"
-    box_filtered_df = pd.merge(box_filtered_df, zone_df[["Sku Code", "zone 할당"]], on="Sku Code", how="left")
+    box_filtered_df = pd.merge(box_filtered_df, zone_df[[sku_col_name, "zone 할당"]], on=sku_col_name, how="left")
     return box_filtered_df
 
 def __main__():
