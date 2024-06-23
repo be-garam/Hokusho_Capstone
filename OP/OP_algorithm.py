@@ -77,36 +77,21 @@ def equip_analysis(data, order, sku, quantity, rank, tolerance=0.05, max_iter=10
         # SEP에 대한 할당
         final_C = quantity_adjust_SEP(splited_C, quantity, sku, tolerance, max_iter, exchange_ratio)
 
-        print(final_A.value_counts())
-        print(final_B.value_counts())
-        print(final_C.value_counts())
-
-
         # 패턴 라벨링
         grouped_A = pattern_labelling(final_A, 'OTP', 'A', sku)
         grouped_B = pattern_labelling(final_B, 'OTP', 'B', sku)
         grouped_C = pattern_labelling(final_C, 'SEP', 'C', sku)
-
-        print(grouped_A.value_counts())
-        print(grouped_B.value_counts())
-        print(grouped_C.value_counts())
 
         # merge
         merged_A = data.merge(grouped_A, on=sku, how='left')
         merged_B = merged_A.merge(grouped_B, on=sku, how='left')
         merged_C = merged_B.merge(grouped_C, on=sku, how='left')
 
-        print('c', merged_C.value_counts())
-
         merged_C['EQUIP'] = merged_C['OTP_A'].combine_first(merged_C['OTP_B']).combine_first(merged_C['SEP_C'])
-
-        print('c', merged_C.value_counts())
 
         order_categories = merged_C.groupby(order)['EQUIP'].apply(lambda x: ''.join(sorted(set(x)))).reset_index()
         order_categories['EQUIP패턴'] = 'pattern' + (order_categories.groupby('EQUIP').ngroup() + 1).astype(str)
         final_DF = merged_C.merge(order_categories[[order, 'EQUIP패턴']], on=order)
-
-        print('c', merged_C.EQUIP.value_counts())
 
         use = [order, sku, quantity, rank, 'Rank패턴', 'EQUIP', 'EQUIP패턴']
 
@@ -114,6 +99,7 @@ def equip_analysis(data, order, sku, quantity, rank, tolerance=0.05, max_iter=10
 
         print(f'Alert: Start saving...')
         final[use].to_excel(f'{save_name}.xlsx', index=False, encoding='cp949', engine='openpyxl')
+        print('Alert: ALL DONE!(please check your files)\n')
     except:
         print('Alert: please check your data(equip_analysis)')
 
@@ -299,7 +285,6 @@ def OP_main(data, order, sku, quantity, rank, tolerance=0.05, max_iter=10**5,
         print("Alert: DONE function ranked_data\n")
         equip_analysis(ranked_data, order, sku, quantity, rank, tolerance=tolerance, max_iter=max_iter,
                        save_name=save_name, exchange_ratio=exchange_ratio, OTP_ratio=OTP_ratio, SEP_ratio=SEP_ratio)
-        print('Alert: ALL DONE!(please check your files)\n')
     except:
         print('Alert: please check your data(OP_main)')
 
@@ -313,7 +298,7 @@ if __name__ == '__main__':
     rank = 'Rank'
     quantity = 'QTYEXPECTED'
     columns_to_load = [order, sku, rank, quantity]
-    data_dir = "../../data/OP_Sample_1203_raw_data.xlsx"
+    data_dir = "./data/OP_Sample_1203_raw_data.xlsx"
     data = pd.read_excel(data_dir, usecols=columns_to_load)
 
     # main execution
