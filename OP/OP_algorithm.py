@@ -1,29 +1,4 @@
-import pandas as pd
-import numpy as np
-
-# 예시 데이터
-data_dir = "C:/Users/HARIN/Programming_PNU/2024_1_Capstone/data/OP_Sample_1203_raw_data.xlsx"
-data = pd.read_excel(data_dir)
-order = 'ORDERKEY'
-sku = 'SKU'
-rank = 'Rank'
-quantity = 'QTYEXPECTED'
-OTP_ratio = {
-    'A': [1/3, 1/3, 1/3],
-    'B': [0.2, 0.7, 0.1]
-}
-SEP_ratio = [0.3, 0.7]
-save_name = 'OP_result'
-tolerance = 0.05
-max_iter = 10**5
-exchange_ratio = 0.1
-
-# 사용할 데이터만 분리.
-def make_new_data(data, order, sku, quantity, rank):
-    try: 
-      return data[[order, sku, quantity, rank]]
-    except:
-        print('Alert: please check your data')
+# functions
 
 # rank_analysis (2023 ver.)
 def rank_analysis(data, rank, order):
@@ -70,7 +45,9 @@ def rank_analysis(data, rank, order):
         print('Rank 패턴 분류에 문제가 생겼습니다. 데이터를 다시 확인해주세요.')
         return
 
-def equip_analysis(data, order, sku, quantity, rank, tolerance=0.05, max_iter=10**5, save_name='OP_result', exchange_ratio=0.1):
+def equip_analysis(data, order, sku, quantity, rank, tolerance=0.05, max_iter=10**5, save_name='OP_result',
+                   exchange_ratio=0.1, OTP_ratio={'A': [0.5, 0.5],'B': [0.5, 0.5]}, SEP_ratio=[0.5, 0.5]):
+    import pandas as pd
     try:
         # OTP와 SEP 데이터 분리
         OTP = data[data[rank] != 'C']
@@ -95,10 +72,10 @@ def equip_analysis(data, order, sku, quantity, rank, tolerance=0.05, max_iter=10
         splited_C = initial_split_sku(SEP_grouped, SEP_ratio, quantity)
 
         # OTP에 대한 할당
-        final_A, final_B = quantity_adjust_OTP(splited_A, splited_B, quantity, tolerance, max_iter, exchange_ratio)
+        final_A, final_B = quantity_adjust_OTP(splited_A, splited_B, quantity, sku, tolerance, max_iter, exchange_ratio)
 
         # SEP에 대한 할당
-        final_C = quantity_adjust_SEP(splited_C, quantity, tolerance, max_iter, exchange_ratio)
+        final_C = quantity_adjust_SEP(splited_C, quantity, sku, tolerance, max_iter, exchange_ratio)
 
         # 패턴 라벨링
         grouped_A = pattern_labelling(final_A, 'OTP', 'A', sku)
@@ -118,9 +95,13 @@ def equip_analysis(data, order, sku, quantity, rank, tolerance=0.05, max_iter=10
 
         use = [order, sku, quantity, rank, 'Rank패턴', 'EQUIP', 'EQUIP패턴']
 
-        final_DF[use].to_csv(f'{save_name}.csv', index=False, encoding='cp949')
+        final = final_DF[use].astype({'SKU':'string'})
+
+        print(f'Alert: Start saving...')
+        final[use].to_excel(f'{save_name}.xlsx', index=False, encoding='cp949', engine='openpyxl')
+        print('Alert: ALL DONE!(please check your files)\n')
     except:
-        print('Alert: please check your data')
+        print('Alert: please check your data(equip_analysis)')
 
 def initial_split_sku(grouped, ratios, quantity):
     try:
@@ -133,10 +114,9 @@ def initial_split_sku(grouped, ratios, quantity):
         splited_sorted = [splited_frag.sort_values(by=quantity, ascending=False) for splited_frag in splited]
         return splited_sorted
     except:
-        print('Alert: please check your data')
+        print('Alert: please check your data(initial_split_sku)')
 
-
-def quantity_adjust_OTP(splited_A, splited_B, quantity, tolerance=0.05, max_iter=10 ** 5, exchange_ratio=0.1):
+def quantity_adjust_OTP(splited_A, splited_B, quantity, sku, tolerance=0.05, max_iter=10 ** 5, exchange_ratio=0.1):
     try:
         import pandas as pd
         import numpy as np
@@ -212,10 +192,10 @@ def quantity_adjust_OTP(splited_A, splited_B, quantity, tolerance=0.05, max_iter
 
         return splited_A, splited_B
     except:
-        print('Alert: please check your data')
+        print('Alert: please check your data(quantity_adjust_OTP)')
 
 
-def quantity_adjust_SEP(splited_C, quantity, tolerance=0.05, max_iter=10 ** 5, exchange_ratio=0.1):
+def quantity_adjust_SEP(splited_C, quantity, sku, tolerance=0.05, max_iter=10 ** 5, exchange_ratio=0.1):
     try:
         import pandas as pd
         import numpy as np
@@ -280,9 +260,10 @@ def quantity_adjust_SEP(splited_C, quantity, tolerance=0.05, max_iter=10 ** 5, e
 
         return splited_C
     except:
-        print('Alert: please check your data')
+        print('Alert: please check your data(quantity_adjust_SEP)')
 
 def pattern_labelling(data, equip, rank, sku):
+    import pandas as pd
     try:
         grouped = []
         for num, df in enumerate(data):
@@ -292,17 +273,33 @@ def pattern_labelling(data, equip, rank, sku):
         grouped = pd.concat(grouped, ignore_index=True)[[sku, f'{equip}_{rank}']]
         return grouped
     except:
-        print('Alert: please check your data')
-
+        print('Alert: please check your data(pattern_labelling)')
 
 
 ### 메인 함수
-def main():
-    new_data = make_new_data(data, order, sku, quantity, rank)
-    ranked_data = rank_analysis(new_data, rank, order)
-    equip_analysis(ranked_data, order, sku, quantity, rank, tolerance=tolerance, max_iter=max_iter, save_name=save_name, exchange_ratio=exchange_ratio)
-    print('Alert: DONE!(please check your files)')
-
+def OP_main(data, order, sku, quantity, rank, tolerance=0.05, max_iter=10**5,
+            save_name='OP_result', exchange_ratio=0.1,
+            OTP_ratio={'A': [0.5, 0.5],'B': [0.5, 0.5]}, SEP_ratio=[0.5, 0.5]):
+    try:
+        ranked_data = rank_analysis(data, rank, order)
+        print("Alert: DONE function ranked_data\n")
+        equip_analysis(ranked_data, order, sku, quantity, rank, tolerance=tolerance, max_iter=max_iter,
+                       save_name=save_name, exchange_ratio=exchange_ratio, OTP_ratio=OTP_ratio, SEP_ratio=SEP_ratio)
+    except:
+        print('Alert: please check your data(OP_main)')
 
 if __name__ == '__main__':
-    main()
+    import pandas as pd
+    import numpy as np
+
+    # 예시 데이터
+    order = 'ORDERKEY'
+    sku = 'SKU'
+    rank = 'Rank'
+    quantity = 'QTYEXPECTED'
+    columns_to_load = [order, sku, rank, quantity]
+    data_dir = "./data/OP_Sample_1203_raw_data.xlsx"
+    data = pd.read_excel(data_dir, usecols=columns_to_load)
+
+    # main execution
+    OP_main(data, order, sku, quantity, rank, save_name="OP_test")
