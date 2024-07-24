@@ -225,11 +225,12 @@ def cutting_plt(df_grouped, sku_col_name, plt_cut, zone_num):
     return df_grouped, df_plt, total_psc, total_order, length
 
 
-def zone_assignment(df_grouped, sku_col_name, zone_num, trial_row, error_percentage, total_psc, total_order, length):
+def zone_assignment(df_grouped, sku_col_name, zone_num, trial_row, error_percentage, total_psc, total_order, length, upper_limmit):
 
     standard_pcs = total_psc/zone_num
     standard_order = total_order/zone_num
     standard_sku_count = int(length/zone_num)
+    print(f"standard_pcs: {standard_pcs}, standard_order: {standard_order}, standard_sku_count: {standard_sku_count}")
 
     # 12345/98765/
     cut_ind = zone_num*trial_row
